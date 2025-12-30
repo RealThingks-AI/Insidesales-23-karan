@@ -9,6 +9,11 @@ import { useAccountsImportExport } from "@/hooks/useAccountsImportExport";
 import { AccountDeleteConfirmDialog } from "@/components/AccountDeleteConfirmDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
+// Export interface for AccountTable ref
+export interface AccountTableRef {
+  handleBulkDelete: () => Promise<void>;
+}
+
 const Accounts = () => {
   const [searchParams] = useSearchParams();
   const initialStatus = searchParams.get('status') || 'all';
@@ -20,8 +25,8 @@ const Accounts = () => {
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Store bulk delete handler reference
-  const bulkDeleteHandlerRef = useRef<(() => Promise<void>) | null>(null);
+  // Ref to call bulk delete from AccountTable
+  const accountTableRef = useRef<AccountTableRef>(null);
 
   const {
     handleImport,
@@ -50,6 +55,14 @@ const Accounts = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  // Execute bulk delete via AccountTable ref
+  const executeBulkDelete = async () => {
+    if (accountTableRef.current) {
+      await accountTableRef.current.handleBulkDelete();
+    }
+    setShowBulkDeleteDialog(false);
   };
 
   return (
@@ -121,6 +134,7 @@ const Accounts = () => {
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 overflow-auto px-4 pt-2 pb-4">
         <AccountTable 
+          ref={accountTableRef}
           showColumnCustomizer={showColumnCustomizer} 
           setShowColumnCustomizer={setShowColumnCustomizer} 
           showModal={showModal} 
@@ -137,16 +151,10 @@ const Accounts = () => {
         />
       </div>
 
-      {/* Bulk Delete Confirmation Dialog - Now triggers properly */}
+      {/* Bulk Delete Confirmation Dialog */}
       <AccountDeleteConfirmDialog 
         open={showBulkDeleteDialog} 
-        onConfirm={() => {
-          // The dialog will close and the bulk delete will be handled
-          // We need to trigger the bulk delete in AccountTable
-          setShowBulkDeleteDialog(false);
-          // Trigger refresh which will cause the AccountTable to re-render
-          // The actual deletion logic is now in AccountTable component
-        }} 
+        onConfirm={executeBulkDelete} 
         onCancel={() => setShowBulkDeleteDialog(false)} 
         isMultiple={true} 
         count={selectedAccounts.length} 
