@@ -48,12 +48,14 @@ interface Contact {
 
 const defaultColumns: ContactColumnConfig[] = [
   { field: 'contact_name', label: 'Contact Name', visible: true, order: 0 },
-  { field: 'account_company_name', label: 'Company Account', visible: true, order: 1 },
+  { field: 'company_name', label: 'Company Name', visible: true, order: 1 },
   { field: 'position', label: 'Position', visible: true, order: 2 },
   { field: 'email', label: 'Email', visible: true, order: 3 },
-  { field: 'phone_no', label: 'Phone Number', visible: true, order: 4 },
-  { field: 'contact_source', label: 'Contact Source', visible: true, order: 5 },
+  { field: 'phone_no', label: 'Phone', visible: true, order: 4 },
+  { field: 'region', label: 'Region', visible: true, order: 5 },
   { field: 'contact_owner', label: 'Contact Owner', visible: true, order: 6 },
+  { field: 'industry', label: 'Industry', visible: true, order: 7 },
+  { field: 'contact_source', label: 'Source', visible: true, order: 8 },
 ];
 
 interface ContactTableProps {
@@ -208,9 +210,9 @@ export const ContactTable = ({
       );
     }
 
-    // Apply owner filter
+    // Apply owner filter - filter by contact_owner, not created_by
     if (ownerFilter && ownerFilter !== "all") {
-      filtered = filtered.filter(contact => contact.created_by === ownerFilter);
+      filtered = filtered.filter(contact => contact.contact_owner === ownerFilter);
     }
 
     // Apply sorting
