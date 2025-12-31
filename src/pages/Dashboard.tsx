@@ -5,21 +5,12 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { BarChart3, LayoutDashboard, RefreshCw } from "lucide-react";
+import { BarChart3, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 
 type DashboardView = "analytics" | "overview";
-
-const getTimeBasedGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-};
 
 const Dashboard = () => {
   const { isAdmin, loading } = useUserRole();
@@ -30,27 +21,6 @@ const Dashboard = () => {
   const currentYear = new Date().getFullYear();
   const defaultYear = availableYears.includes(currentYear) ? currentYear : 2025;
   const [selectedYear, setSelectedYear] = useState(defaultYear);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Fetch user's profile name
-  const { data: userName } = useQuery({
-    queryKey: ['dashboard-user-name', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (error) throw error;
-      const name = data?.full_name;
-      if (!name || name.includes('@')) {
-        return user.email?.split('@')[0] || null;
-      }
-      return name;
-    },
-    enabled: !!user?.id,
-  });
 
   // Fetch admin's dashboard preference (uses dedicated dashboard_view column)
   const { data: dashboardPreference, isLoading: prefLoading } = useQuery({
@@ -104,19 +74,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await queryClient.invalidateQueries({ queryKey: ['user-'] });
-      await queryClient.invalidateQueries({ queryKey: ['dashboard-'] });
-      toast.success("Dashboard refreshed");
-    } catch {
-      toast.error("Failed to refresh");
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   if (loading || (isAdmin && prefLoading)) {
     return (
       <div className="p-6 space-y-6">
@@ -133,70 +90,48 @@ const Dashboard = () => {
     );
   }
 
-  const greeting = getTimeBasedGreeting();
+  // Non-admin users only see UserDashboard
+  if (!isAdmin) {
+    return <UserDashboard />;
+  }
 
+  // Admin users can toggle between views
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      {/* Fixed Header - Unified for all users */}
+      {/* Fixed Header */}
       <div className="flex-shrink-0 bg-background">
         <div className="px-6 h-16 flex items-center border-b w-full">
-          <div className="flex items-center justify-between w-full gap-4">
-            {/* Left side: View toggle and greeting */}
-            <div className="flex items-center gap-4 min-w-0 flex-1">
-              {/* Admin-only view toggle - positioned first/left */}
-              {isAdmin && (
-                <ToggleGroup 
-                  type="single" 
-                  value={currentView} 
-                  onValueChange={handleViewChange}
-                  className="bg-muted/60 border border-border rounded-lg p-1 hidden sm:flex flex-shrink-0"
-                >
-                  <ToggleGroupItem 
-                    value="overview" 
-                    aria-label="Dashboard Overview"
-                    className="px-3 py-1.5 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=off]:text-muted-foreground"
-                  >
-                    <LayoutDashboard className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </ToggleGroupItem>
-                  <ToggleGroupItem 
-                    value="analytics" 
-                    aria-label="Revenue Analytics"
-                    className="px-3 py-1.5 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=off]:text-muted-foreground"
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Revenue
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              )}
-              
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-semibold text-foreground truncate">
-                  {greeting}{userName ? `, ${userName}` : ''}!
-                </h1>
-              </div>
-            </div>
-            
-            {/* Right side: Actions */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              {/* Refresh Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="h-9 w-9"
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-4">
+              <ToggleGroup 
+                type="single" 
+                value={currentView} 
+                onValueChange={handleViewChange}
+                className="bg-muted/60 border border-border rounded-lg p-1"
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </Button>
-              
-              {/* Notification Bell */}
+                <ToggleGroupItem 
+                  value="overview" 
+                  aria-label="Dashboard Overview"
+                  className="px-3 py-1.5 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=off]:text-muted-foreground"
+                >
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  Dashboard
+                </ToggleGroupItem>
+                <ToggleGroupItem 
+                  value="analytics" 
+                  aria-label="Revenue Analytics"
+                  className="px-3 py-1.5 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=off]:text-muted-foreground"
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Revenue Analytics
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            <div className="flex items-center gap-4">
               <NotificationBell placement="down" size="small" />
-              
-              {/* Year selector for analytics view */}
-              {isAdmin && currentView === "analytics" && (
+              {currentView === "analytics" && (
                 <Select value={selectedYear.toString()} onValueChange={value => setSelectedYear(parseInt(value))}>
-                  <SelectTrigger className="w-28">
+                  <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -214,14 +149,14 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        {isAdmin && currentView === "analytics" ? (
+      <div className={`flex-1 min-h-0 ${currentView === "analytics" ? "overflow-auto" : "overflow-hidden"}`}>
+        {currentView === "analytics" ? (
           <div className="p-6 space-y-8">
             <YearlyRevenueSummary selectedYear={selectedYear} />
             <div className="border-t border-border" />
           </div>
         ) : (
-          <UserDashboard hideHeader />
+          <UserDashboard />
         )}
       </div>
     </div>

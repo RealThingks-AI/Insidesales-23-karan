@@ -8,6 +8,7 @@ import {
   Users, FileText, Briefcase, Plus, Settings2, Calendar, Activity, Bell, 
   Mail, Building2, ListTodo, CalendarClock, ClipboardList, Check, X, TrendingUp, TrendingDown, Minus, User
 } from "lucide-react";
+import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { Switch } from "@/components/ui/switch";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -80,11 +81,7 @@ const compactLayoutsUtil = (layouts: WidgetLayoutConfig, visibleKeys: WidgetKey[
   return compacted;
 };
 
-interface UserDashboardProps {
-  hideHeader?: boolean;
-}
-
-const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
+const UserDashboard = () => {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
@@ -156,22 +153,6 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return user.email?.split('@')[0] || null;
       }
       return name;
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch user preferences for currency
-  const { data: userPreferences } = useQuery({
-    queryKey: ['user-preferences', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('currency')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
     },
     enabled: !!user?.id,
   });
@@ -827,12 +808,10 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
     enabled: !!user?.id && !!userProfiles
   });
 
-  const userCurrency = userPreferences?.currency || 'INR';
-  
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: userCurrency,
+      currency: 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
@@ -862,12 +841,7 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return (
           <Card className="h-full hover:shadow-lg transition-shadow animate-fade-in overflow-hidden flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-3 flex-shrink-0">
-              <CardTitle 
-                className="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => !isResizeMode && navigate('/leads')}
-              >
-                My Leads
-              </CardTitle>
+              <CardTitle className="text-sm font-medium truncate">My Leads</CardTitle>
               <Button variant="outline" size="sm" className="h-6 text-xs gap-1 flex-shrink-0" onClick={() => !isResizeMode && setLeadModalOpen(true)}>
                 <Plus className="w-3 h-3" /> Add Lead
               </Button>
@@ -911,12 +885,7 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return (
           <Card className="h-full hover:shadow-lg transition-shadow animate-fade-in overflow-hidden flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-3 flex-shrink-0">
-              <CardTitle 
-                className="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => !isResizeMode && navigate('/contacts')}
-              >
-                My Contacts
-              </CardTitle>
+              <CardTitle className="text-sm font-medium truncate">My Contacts</CardTitle>
               <Button variant="outline" size="sm" className="h-6 text-xs gap-1 flex-shrink-0" onClick={() => !isResizeMode && setContactModalOpen(true)}>
                 <Plus className="w-3 h-3" /> Add Contact
               </Button>
@@ -960,12 +929,7 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return (
           <Card className="h-full hover:shadow-lg transition-shadow animate-fade-in overflow-hidden flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-3 flex-shrink-0">
-              <CardTitle 
-                className="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => !isResizeMode && navigate('/deals')}
-              >
-                My Deals
-              </CardTitle>
+              <CardTitle className="text-sm font-medium truncate">My Deals</CardTitle>
               <Button variant="outline" size="sm" className="h-6 text-xs gap-1 flex-shrink-0" onClick={() => !isResizeMode && navigate('/deals')}>
                 View All
               </Button>
@@ -1009,12 +973,7 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return (
           <Card className="h-full hover:shadow-lg transition-shadow animate-fade-in overflow-hidden flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-3 flex-shrink-0">
-              <CardTitle 
-                className="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => !isResizeMode && navigate('/accounts')}
-              >
-                My Accounts
-              </CardTitle>
+              <CardTitle className="text-sm font-medium truncate">My Accounts</CardTitle>
               <Button variant="outline" size="sm" className="h-6 text-xs gap-1 flex-shrink-0" onClick={() => !isResizeMode && setAccountModalOpen(true)}>
                 <Plus className="w-3 h-3" /> Add Account
               </Button>
@@ -1230,12 +1189,7 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return (
           <Card className="h-full hover:shadow-lg transition-shadow animate-fade-in overflow-hidden flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-3 flex-shrink-0">
-              <CardTitle 
-                className="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => !isResizeMode && navigate('/meetings')}
-              >
-                My Meetings
-              </CardTitle>
+              <CardTitle className="text-sm font-medium truncate">My Meetings</CardTitle>
               <Button variant="outline" size="sm" className="h-6 text-xs gap-1 flex-shrink-0" onClick={() => !isResizeMode && setCreateMeetingModalOpen(true)}>
                 <Plus className="w-3 h-3" /> Add Meeting
               </Button>
@@ -1279,12 +1233,7 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return (
           <Card className="h-full hover:shadow-lg transition-shadow animate-fade-in overflow-hidden flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-3 flex-shrink-0">
-              <CardTitle 
-                className="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => !isResizeMode && navigate('/tasks')}
-              >
-                My Tasks
-              </CardTitle>
+              <CardTitle className="text-sm font-medium truncate">My Tasks</CardTitle>
               <Button variant="outline" size="sm" className="h-6 text-xs gap-1 flex-shrink-0" onClick={() => { if (!isResizeMode) { setSelectedTask(null); setTaskModalOpen(true); }}}>
                 <Plus className="w-3 h-3" /> Add Task
               </Button>
@@ -1390,10 +1339,7 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return (
           <Card className="h-full animate-fade-in overflow-hidden flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-3 flex-shrink-0">
-              <CardTitle 
-                className="flex items-center gap-1.5 text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => !isResizeMode && navigate('/settings?tab=audit')}
-              >
+              <CardTitle className="flex items-center gap-1.5 text-sm font-medium truncate">
                 <Activity className="w-4 h-4 text-primary flex-shrink-0" />
                 Recent Activities
               </CardTitle>
@@ -1495,12 +1441,7 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         return (
           <Card className="h-full animate-fade-in overflow-hidden flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between py-2 px-3 flex-shrink-0">
-              <CardTitle 
-                className="text-sm font-medium truncate cursor-pointer hover:text-primary transition-colors"
-                onClick={() => !isResizeMode && navigate('/settings?tab=email-history')}
-              >
-                Email Statistics
-              </CardTitle>
+              <CardTitle className="text-sm font-medium truncate">Email Statistics</CardTitle>
               <Mail className="w-4 h-4 text-blue-600 flex-shrink-0" />
             </CardHeader>
             <CardContent className="px-3 pb-3 pt-0 flex-1 min-h-0 flex flex-col justify-center gap-2">
@@ -1747,24 +1688,27 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
   };
 
   return (
-    <div className="px-2 sm:px-4 py-4 space-y-4 w-full overflow-x-hidden" ref={containerRef}>
-      {/* Customize Controls - shown at top when hideHeader is true, otherwise part of header */}
-      <div className="flex items-center justify-end flex-wrap gap-2">
+    <div className="h-full flex flex-col overflow-hidden" ref={containerRef}>
+      {/* Header with Search - Fixed at top */}
+      <div className="flex-shrink-0 flex items-center justify-between flex-wrap gap-2 bg-background py-4 px-2 sm:px-4">
+        <div className="min-w-0 flex-1 max-w-sm">
+          <GlobalSearch />
+        </div>
         <div className="flex gap-2 flex-shrink-0 items-center">
           {isResizeMode ? (
             <>
-              <div className="bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 flex items-center">
+              <div className="bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 hidden sm:flex items-center">
                 <p className="text-xs text-primary font-medium flex items-center gap-1.5">
                   <Settings2 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Drag to move, resize edges, or press Escape to cancel</span>
-                  <span className="sm:hidden">Edit mode</span>
+                  <span className="hidden md:inline">Drag to move, resize edges, or press Escape to cancel</span>
+                  <span className="md:hidden">Edit mode</span>
                 </p>
               </div>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="gap-2">
                     <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Add Widget</span>
+                    Add Widget
                     {pendingWidgetChanges.size > 0 && (
                       <span className="bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
                         {pendingWidgetChanges.size}
@@ -1802,10 +1746,10 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
                 </PopoverContent>
               </Popover>
               <Button variant="outline" onClick={handleCancelCustomize} className="gap-2">
-                <X className="w-4 h-4" /> <span className="hidden sm:inline">Cancel</span>
+                <X className="w-4 h-4" /> Cancel
               </Button>
               <Button onClick={handleSaveLayout} className="gap-2" disabled={savePreferencesMutation.isPending}>
-                <Check className="w-4 h-4" /> <span className="hidden sm:inline">{savePreferencesMutation.isPending ? 'Saving...' : 'Save'}</span>
+                <Check className="w-4 h-4" /> {savePreferencesMutation.isPending ? 'Saving...' : 'Save'}
               </Button>
             </>
           ) : (
@@ -1816,17 +1760,19 @@ const UserDashboard = ({ hideHeader = false }: UserDashboardProps) => {
         </div>
       </div>
 
-      {/* Resizable Grid Layout */}
-      <ResizableDashboard
-        isResizeMode={isResizeMode}
-        visibleWidgets={visibleWidgets}
-        widgetLayouts={widgetLayouts}
-        pendingWidgetChanges={pendingWidgetChanges}
-        onLayoutChange={handleLayoutChange}
-        onWidgetRemove={handleWidgetRemove}
-        renderWidget={renderWidget}
-        containerWidth={containerWidth}
-      />
+      {/* Scrollable Widgets Area */}
+      <div className="flex-1 min-h-0 overflow-auto px-2 sm:px-4 py-4">
+        <ResizableDashboard
+          isResizeMode={isResizeMode}
+          visibleWidgets={visibleWidgets}
+          widgetLayouts={widgetLayouts}
+          pendingWidgetChanges={pendingWidgetChanges}
+          onLayoutChange={handleLayoutChange}
+          onWidgetRemove={handleWidgetRemove}
+          renderWidget={renderWidget}
+          containerWidth={containerWidth}
+        />
+      </div>
       
       {/* Modals */}
       <TaskModal
