@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -48,15 +48,6 @@ const queryClient = new QueryClient({
 const persister = createSyncStoragePersister({
   storage: window.localStorage,
   key: 'rt-crm-cache',
-});
-
-// Clear persisted cache on logout
-supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_OUT') {
-    // Clear all cached data when user signs out
-    localStorage.removeItem('rt-crm-cache');
-    queryClient.clear();
-  }
 });
 
 // Loading fallback for auth page (full screen)
@@ -106,10 +97,35 @@ const FixedSidebarLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Route prefetcher - preloads page chunks after auth
-const useRoutePrefetch = (isAuthenticated: boolean) => {
+// Hook to clear cache on logout and prefetch routes
+const useAppSetup = (isAuthenticated: boolean) => {
   const hasPrefetched = useRef(false);
+  const prevUserId = useRef<string | null>(null);
   
+  // Clear cache on logout
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        // Clear all cached data when user signs out
+        localStorage.removeItem('rt-crm-cache');
+        queryClient.clear();
+      }
+      
+      // Clear cache if user changed (different user logged in)
+      const newUserId = session?.user?.id || null;
+      if (prevUserId.current && newUserId && prevUserId.current !== newUserId) {
+        localStorage.removeItem('rt-crm-cache');
+        queryClient.clear();
+      }
+      prevUserId.current = newUserId;
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+  
+  // Prefetch route chunks after authentication
   useEffect(() => {
     if (isAuthenticated && !hasPrefetched.current) {
       hasPrefetched.current = true;
@@ -146,8 +162,8 @@ const useRoutePrefetch = (isAuthenticated: boolean) => {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
-  // Prefetch routes when user is authenticated
-  useRoutePrefetch(!!user);
+  // Setup app (cache clearing, route prefetch)
+  useAppSetup(!!user);
 
   if (loading) {
     return (
