@@ -96,13 +96,15 @@ export const ListView = ({
   // Column customizer state
   const [columnCustomizerOpen, setColumnCustomizerOpen] = useState(false);
 
-  // Fetch all profiles for lead owner dropdown
+  // Fetch all profiles for lead owner dropdown - use shared cache
   const { data: allProfiles = [] } = useQuery({
     queryKey: ['all-profiles'],
     queryFn: async () => {
       const { data } = await supabase.from('profiles').select('id, full_name');
       return data || [];
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes - profiles rarely change
+    gcTime: 30 * 60 * 1000,
   });
 
   // Use column preferences hook for database persistence

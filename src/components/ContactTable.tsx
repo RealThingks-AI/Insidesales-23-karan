@@ -133,19 +133,26 @@ export const ContactTable = forwardRef<ContactTableRef, ContactTableProps>(({
   const [segmentFilter, setSegmentFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
 
-  // Fetch current user ID for "me" filtering
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
+  // Use cached auth instead of fetching user each time
+  const { data: authData } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        if (ownerParam === 'me') {
-          setOwnerFilter(user.id);
-        }
+      return user;
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  // Set current user ID from cached auth
+  useEffect(() => {
+    if (authData) {
+      setCurrentUserId(authData.id);
+      if (ownerParam === 'me') {
+        setOwnerFilter(authData.id);
       }
-    };
-    fetchCurrentUser();
-  }, [ownerParam]);
+    }
+  }, [authData, ownerParam]);
 
   // Sync filters when URL changes
   useEffect(() => {

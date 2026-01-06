@@ -29,9 +29,10 @@ const StickyHeaderTest = lazy(() => import("./pages/StickyHeaderTest"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 1000, // 30 seconds - data stays fresh, no refetch on mount
-      gcTime: 10 * 60 * 1000, // 10 minutes cache
+      staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, reduces refetching
+      gcTime: 15 * 60 * 1000, // 15 minutes cache - keep data longer
       refetchOnWindowFocus: false, // Don't refetch when user switches tabs
+      refetchOnMount: false, // Don't refetch on component mount if data exists
       retry: 1, // Reduce retries to avoid long waits
     },
   },

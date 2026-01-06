@@ -110,24 +110,26 @@ const AccountTable = forwardRef<AccountTableRef, AccountTableProps>(({
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
 
-  // Fetch current user ID for "me" filtering
+  // Use cached auth instead of fetching user each time
+  const { data: authData } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes - user rarely changes
+    gcTime: 30 * 60 * 1000,
+  });
+
+  // Set current user ID from cached auth
   useEffect(() => {
-    const fetchCurrentUser = async () => {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        // If owner=me in URL, set the owner filter to current user's ID
-        if (ownerParam === 'me') {
-          setOwnerFilter(user.id);
-        }
+    if (authData) {
+      setCurrentUserId(authData.id);
+      if (ownerParam === 'me') {
+        setOwnerFilter(authData.id);
       }
-    };
-    fetchCurrentUser();
-  }, [ownerParam]);
+    }
+  }, [authData, ownerParam]);
 
   // Sync statusFilter when initialStatus prop changes (from URL)
   useEffect(() => {
@@ -179,62 +181,38 @@ const AccountTable = forwardRef<AccountTableRef, AccountTableProps>(({
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 
-  // Fetch accounts with React Query caching
+  // Fetch accounts with React Query caching - PARALLELIZED counts
   const { data: accounts = [], isLoading: loading, refetch: refetchAccounts } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
-      const {
-        data: accountsData,
-        error
-      } = await supabase.from('accounts').select('*').order('created_at', {
-        ascending: false
-      });
-      if (error) throw error;
+      // Run all queries in parallel for faster loading
+      const [accountsResult, contactCountsResult, dealCountsResult, leadCountsResult] = await Promise.all([
+        supabase.from('accounts').select('*').order('created_at', { ascending: false }),
+        supabase.from('contacts').select('account_id').not('account_id', 'is', null),
+        supabase.from('deals').select('account_id').not('account_id', 'is', null),
+        supabase.from('leads').select('account_id').not('account_id', 'is', null),
+      ]);
 
-      // Fetch actual contact counts per account
-      const { data: contactCounts } = await supabase
-        .from('contacts')
-        .select('account_id')
-        .not('account_id', 'is', null);
+      if (accountsResult.error) throw accountsResult.error;
 
-      // Calculate contact counts
-      const contactCountMap = (contactCounts || []).reduce((acc, c) => {
-        if (c.account_id) {
-          acc[c.account_id] = (acc[c.account_id] || 0) + 1;
-        }
+      // Calculate counts from parallel results
+      const contactCountMap = (contactCountsResult.data || []).reduce((acc, c) => {
+        if (c.account_id) acc[c.account_id] = (acc[c.account_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      // Fetch deal counts by account_id (now using proper FK)
-      const { data: dealCounts } = await supabase
-        .from('deals')
-        .select('account_id')
-        .not('account_id', 'is', null);
-
-      // Calculate deal counts
-      const dealCountMap = (dealCounts || []).reduce((acc, d) => {
-        if (d.account_id) {
-          acc[d.account_id] = (acc[d.account_id] || 0) + 1;
-        }
+      const dealCountMap = (dealCountsResult.data || []).reduce((acc, d) => {
+        if (d.account_id) acc[d.account_id] = (acc[d.account_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      // Fetch lead counts by account_id
-      const { data: leadCounts } = await supabase
-        .from('leads')
-        .select('account_id')
-        .not('account_id', 'is', null);
-
-      // Calculate lead counts
-      const leadCountMap = (leadCounts || []).reduce((acc, l) => {
-        if (l.account_id) {
-          acc[l.account_id] = (acc[l.account_id] || 0) + 1;
-        }
+      const leadCountMap = (leadCountsResult.data || []).reduce((acc, l) => {
+        if (l.account_id) acc[l.account_id] = (acc[l.account_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      // Merge actual counts into accounts (DB triggers will keep these in sync)
-      return (accountsData || []).map(account => ({
+      // Merge counts into accounts
+      return (accountsResult.data || []).map(account => ({
         ...account,
         contact_count: account.contact_count || contactCountMap[account.id] || 0,
         deal_count: account.deal_count || dealCountMap[account.id] || 0,
