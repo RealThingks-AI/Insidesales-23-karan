@@ -2,14 +2,17 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import SecurityEnhancedApp from "@/components/SecurityEnhancedApp";
 import { AppSidebar } from "@/components/AppSidebar";
 import PageAccessGuard from "@/components/PageAccessGuard";
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 // Lazy load all page components for code-splitting
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -25,17 +28,35 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const Tasks = lazy(() => import("./pages/Tasks"));
 const StickyHeaderTest = lazy(() => import("./pages/StickyHeaderTest"));
 
+// Build version for cache busting on deployments
+const CACHE_BUSTER = 'v1.0.0';
+
 // QueryClient with optimized defaults to reduce refetching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000, // 2 minutes - data stays fresh, reduces refetching
-      gcTime: 15 * 60 * 1000, // 15 minutes cache - keep data longer
-      refetchOnWindowFocus: false, // Don't refetch when user switches tabs
-      refetchOnMount: false, // Don't refetch on component mount if data exists
-      retry: 1, // Reduce retries to avoid long waits
+      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh
+      gcTime: 24 * 60 * 60 * 1000, // 24 hours cache
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: 1,
     },
   },
+});
+
+// Create persister for localStorage caching across page refreshes
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: 'rt-crm-cache',
+});
+
+// Clear persisted cache on logout
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    // Clear all cached data when user signs out
+    localStorage.removeItem('rt-crm-cache');
+    queryClient.clear();
+  }
 });
 
 // Loading fallback for auth page (full screen)
@@ -85,9 +106,48 @@ const FixedSidebarLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Route prefetcher - preloads page chunks after auth
+const useRoutePrefetch = (isAuthenticated: boolean) => {
+  const hasPrefetched = useRef(false);
+  
+  useEffect(() => {
+    if (isAuthenticated && !hasPrefetched.current) {
+      hasPrefetched.current = true;
+      
+      // Prefetch route chunks in background after a short delay
+      const prefetch = () => {
+        // Use requestIdleCallback if available, otherwise setTimeout
+        const scheduleImport = (importFn: () => Promise<any>) => {
+          if ('requestIdleCallback' in window) {
+            (window as any).requestIdleCallback(() => importFn().catch(() => {}));
+          } else {
+            setTimeout(() => importFn().catch(() => {}), 100);
+          }
+        };
+        
+        // Prefetch main route chunks
+        scheduleImport(() => import("./pages/Accounts"));
+        scheduleImport(() => import("./pages/Contacts"));
+        scheduleImport(() => import("./pages/Leads"));
+        scheduleImport(() => import("./pages/Meetings"));
+        scheduleImport(() => import("./pages/DealsPage"));
+        scheduleImport(() => import("./pages/Tasks"));
+        scheduleImport(() => import("./pages/Settings"));
+        scheduleImport(() => import("./pages/Notifications"));
+      };
+      
+      // Start prefetching after initial render settles
+      setTimeout(prefetch, 1000);
+    }
+  }, [isAuthenticated]);
+};
+
 // Protected Route Component with Page Access Control
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  
+  // Prefetch routes when user is authenticated
+  useRoutePrefetch(!!user);
 
   if (loading) {
     return (
@@ -212,7 +272,14 @@ const AppRouter = () => (
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider
+    client={queryClient}
+    persistOptions={{
+      persister,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      buster: CACHE_BUSTER,
+    }}
+  >
     <SecurityEnhancedApp>
       <TooltipProvider>
         <Toaster />
@@ -220,7 +287,7 @@ const App = () => (
         <AppRouter />
       </TooltipProvider>
     </SecurityEnhancedApp>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;
