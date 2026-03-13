@@ -156,7 +156,6 @@ interface DealFormProps {
     try {
       const nextStage = getNextStage(currentStage);
       if (nextStage) {
-        console.log(`Moving deal from ${currentStage} to ${nextStage}`);
         
         const updatedData = {
           ...formData,
