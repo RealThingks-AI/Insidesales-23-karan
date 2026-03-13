@@ -62,7 +62,7 @@ interface DealFormProps {
 
   useEffect(() => {
     if (deal) {
-      console.log("Setting form data from deal:", deal);
+      
       // Initialize revenue fields with 0 if they are null
       const initializedDeal = {
         ...deal,
