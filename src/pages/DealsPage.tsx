@@ -169,9 +169,6 @@ const DealsPage = () => {
       const deletedIds = (data || []).map((row: { id: string }) => row.id);
       const notDeleted = dealIds.filter(id => !deletedIds.includes(id));
 
-      console.log("Deleted IDs:", deletedIds);
-      console.log("Not deleted due to RLS/permissions:", notDeleted);
-
       // Update local state only for deals that were actually deleted
       if (deletedIds.length > 0) {
         setDeals(prev => prev.filter(deal => !deletedIds.includes(deal.id)));
