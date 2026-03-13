@@ -27,7 +27,10 @@ const Accounts = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const { logBulkDelete } = useCRUDAudit();
 
   const { handleImport, handleExport, isImporting } = useSimpleAccountsImportExport(() => {
     setRefreshTrigger(prev => prev + 1);
