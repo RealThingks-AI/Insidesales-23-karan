@@ -158,7 +158,6 @@ const DealsPage = () => {
         .select('id');
 
       if (error) {
-        console.error("Delete error:", error);
         toast({
           title: "Error",
           description: "Failed to delete deals",
