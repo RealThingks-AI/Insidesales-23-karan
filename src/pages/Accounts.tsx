@@ -144,6 +144,9 @@ const Accounts = () => {
             {selectedAccounts.length} item{selectedAccounts.length !== 1 ? 's' : ''} selected
           </span>
           <div className="flex-1" />
+          <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
+            <Trash2 className="h-4 w-4 mr-1" /> Delete
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => setSelectedAccounts([])} className="text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4 mr-1" /> Clear
           </Button>
