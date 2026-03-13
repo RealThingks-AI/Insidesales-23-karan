@@ -193,7 +193,6 @@ interface DealFormProps {
     setLoading(true);
     
     try {
-      console.log(`Moving deal to final stage: ${finalStage}`);
       
       const updatedData = {
         ...formData,
