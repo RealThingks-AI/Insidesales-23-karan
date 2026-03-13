@@ -94,21 +94,15 @@ const DealsPage = () => {
 
   const handleSaveDeal = async (dealData: Partial<Deal>) => {
     try {
-      console.log("=== SAVE DEAL DEBUG ===");
-      console.log("Is creating:", isCreating);
-      console.log("Deal data:", dealData);
-      
       if (isCreating) {
         const insertData = { 
           ...dealData, 
           deal_name: dealData.project_name || dealData.deal_name || 'Untitled Deal',
-          created_by: user?.id, // Ensure created_by is set for RLS
+          created_by: user?.id,
           modified_by: user?.id,
           created_at: new Date().toISOString(),
           modified_at: new Date().toISOString()
         };
-        
-        console.log("Insert data:", insertData);
 
         const { data, error } = await supabase
           .from('deals')
