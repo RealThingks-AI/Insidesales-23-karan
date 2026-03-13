@@ -55,7 +55,7 @@ interface DealFormProps {
         // Respect user-entered value or previously resolved name
         return prev;
       }
-      console.log("DealForm: Auto-setting lead_owner to current user's display name:", name);
+      
       return { ...prev, lead_owner: name };
     });
   }, [isCreating, currentUserId, currentUserDisplayNames]);
