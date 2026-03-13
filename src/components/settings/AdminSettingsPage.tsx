@@ -1,8 +1,8 @@
 import { useState, lazy, Suspense, useEffect } from 'react';
-import { Users, Lock, History, Activity, BarChart3, Database } from 'lucide-react';
+import { Users, Lock, History, Database } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissions } from '@/contexts/PermissionsContext';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import SettingsCard from './shared/SettingsCard';
 import SettingsLoadingSkeleton from './shared/SettingsLoadingSkeleton';
@@ -17,8 +17,7 @@ const adminTabs = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'access', label: 'Access', icon: Lock },
   { id: 'logs', label: 'Logs', icon: History },
-  { id: 'system', label: 'System', icon: Activity },
-  { id: 'reports', label: 'Reports', icon: BarChart3 }
+  { id: 'system', label: 'System', icon: Database },
 ];
 
 interface AdminSettingsPageProps {
@@ -26,7 +25,7 @@ interface AdminSettingsPageProps {
 }
 
 const AdminSettingsPage = ({ defaultSection }: AdminSettingsPageProps) => {
-  const { userRole, loading: roleLoading } = useUserRole();
+  const { isAdmin, loading: roleLoading } = usePermissions();
 
   const getTabFromSection = (section: string | null) => {
     if (!section) return 'users';
@@ -47,8 +46,6 @@ const AdminSettingsPage = ({ defaultSection }: AdminSettingsPageProps) => {
       setActiveTab(getTabFromSection(defaultSection));
     }
   }, [defaultSection]);
-
-  const isAdmin = userRole === 'admin';
 
   if (roleLoading) {
     return (
@@ -79,7 +76,7 @@ const AdminSettingsPage = ({ defaultSection }: AdminSettingsPageProps) => {
     <div className="space-y-6 w-full">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="sticky top-0 z-10 bg-background pb-2 border-b border-border">
-          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
             {adminTabs.map(tab => {
               const Icon = tab.icon;
               return (
@@ -120,17 +117,6 @@ const AdminSettingsPage = ({ defaultSection }: AdminSettingsPageProps) => {
               <BackupRestoreSettings />
             </Suspense>
           </SettingsCard>
-        </TabsContent>
-
-        <TabsContent value="reports" className="mt-6 space-y-6">
-          <Card>
-            <CardContent className="py-8">
-              <div className="text-center text-muted-foreground">
-                <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Scheduled reports coming soon</p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
