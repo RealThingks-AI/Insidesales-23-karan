@@ -3,9 +3,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NotificationBell } from "@/components/NotificationBell";
 import { useState } from "react";
 
-const availableYears = [2023, 2024, 2025, 2026];
 const currentYear = new Date().getFullYear();
-const defaultYear = availableYears.includes(currentYear) ? currentYear : 2025;
+const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+const defaultYear = currentYear;
 
 const Dashboard = () => {
   const [selectedYear, setSelectedYear] = useState(defaultYear);
