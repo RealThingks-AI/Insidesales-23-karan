@@ -97,10 +97,6 @@ interface DealFormProps {
   }, [formData, currentStage, showValidationErrors]);
 
   const handleFieldChange = (field: string, value: any) => {
-    console.log(`=== FIELD UPDATE DEBUG ===`);
-    console.log(`Updating field: ${field}`);
-    console.log(`New value:`, value, `(type: ${typeof value})`);
-    console.log(`Current formData before update:`, formData);
     
     setFormData(prev => {
       const updated = { ...prev };
