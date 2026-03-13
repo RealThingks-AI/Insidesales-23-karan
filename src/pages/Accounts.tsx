@@ -55,6 +55,21 @@ const Accounts = () => {
     if (file) { handleImport(file); event.target.value = ''; }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedAccounts.length === 0) return;
+    setShowDeleteConfirm(false);
+    try {
+      const { error } = await supabase.from('accounts').delete().in('id', selectedAccounts);
+      if (error) throw error;
+      await logBulkDelete('accounts', selectedAccounts.length, selectedAccounts);
+      toast({ title: "Success", description: `${selectedAccounts.length} accounts deleted` });
+      setSelectedAccounts([]);
+      setRefreshTrigger(prev => prev + 1);
+    } catch {
+      toast({ title: "Error", description: "Failed to delete accounts", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header */}
