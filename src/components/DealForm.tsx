@@ -115,9 +115,6 @@ interface DealFormProps {
     setLoading(true);
 
     try {
-      console.log("=== DEAL FORM SUBMIT DEBUG ===");
-      console.log("Current stage:", currentStage);
-      console.log("Form data before save:", formData);
       
       // No validation - allow saving with any data
       const saveData = {
