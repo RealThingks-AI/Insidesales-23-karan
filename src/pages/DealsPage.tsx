@@ -311,7 +311,6 @@ const DealsPage = () => {
 
       // Listen for custom import events
       const handleImportEvent = () => {
-        console.log('DealsPage: Received deals-data-updated event, refreshing...');
         fetchDeals();
       };
       
