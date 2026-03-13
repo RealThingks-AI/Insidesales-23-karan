@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { User, Shield, Mail, Megaphone } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useUserRole } from "@/hooks/useUserRole";
+import { usePermissions } from "@/contexts/PermissionsContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Lazy load heavy settings pages
@@ -61,18 +61,17 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState(() => {
     return searchParams.get('tab') || 'account';
   });
-  const { userRole } = useUserRole();
-  const isAdmin = userRole === "admin";
+  const { isAdmin } = usePermissions();
 
   const visibleTabs = tabs.filter(tab => !tab.adminOnly || isAdmin);
 
-  // Sync tab with URL changes (e.g., browser navigation)
+  // Sync tab with URL changes
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab');
     if (tabFromUrl && tabFromUrl !== activeTab && visibleTabs.some(t => t.id === tabFromUrl)) {
       setActiveTab(tabFromUrl);
     }
-  }, [searchParams, visibleTabs]);
+  }, [searchParams, visibleTabs, activeTab]);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -113,7 +112,6 @@ const Settings = () => {
     const newTab = visibleTabs[newIndex];
     setActiveTab(newTab.id);
     
-    // Focus the new tab button
     const tabElement = document.getElementById(`tab-${newTab.id}`);
     tabElement?.focus();
   }, [visibleTabs]);

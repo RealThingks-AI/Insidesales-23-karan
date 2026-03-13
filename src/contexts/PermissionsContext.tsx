@@ -10,12 +10,20 @@ interface PagePermission {
   admin_access: boolean;
   manager_access: boolean;
   user_access: boolean;
+  super_admin_access: boolean;
+  sales_head_access: boolean;
+  field_sales_access: boolean;
+  inside_sales_access: boolean;
 }
 
 interface PermissionsContextType {
   userRole: string;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isManager: boolean;
+  isSalesHead: boolean;
+  isFieldSales: boolean;
+  isInsideSales: boolean;
   permissions: PagePermission[];
   loading: boolean;
   hasPageAccess: (route: string) => boolean;
@@ -60,7 +68,7 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
       return { role: data?.role || 'user' };
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
 
@@ -77,10 +85,10 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
         return [];
       }
       
-      return data as PagePermission[];
+      return (data as unknown) as PagePermission[];
     },
     enabled: !!user,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 
@@ -95,10 +103,7 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
   }, [queryClient, user?.id]);
 
   const hasPageAccess = useCallback((route: string): boolean => {
-    // Normalize route
     const normalizedRoute = route === '/' ? '/dashboard' : route.replace(/\/$/, '');
-    
-    // Find permission for this route
     const permission = permissions.find(p => p.route === normalizedRoute);
     
     // If no permission record exists, allow access by default
@@ -106,10 +111,17 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
       return true;
     }
 
-    // Check access based on role
     switch (userRole) {
+      case 'super_admin':
+        return permission.super_admin_access;
       case 'admin':
         return permission.admin_access;
+      case 'sales_head':
+        return permission.sales_head_access;
+      case 'field_sales':
+        return permission.field_sales_access;
+      case 'inside_sales':
+        return permission.inside_sales_access;
       case 'manager':
         return permission.manager_access;
       case 'user':
@@ -118,8 +130,12 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
     }
   }, [permissions, userRole]);
 
-  const isAdmin = userRole === 'admin';
+  const isSuperAdmin = userRole === 'super_admin';
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const isManager = userRole === 'manager';
+  const isSalesHead = userRole === 'sales_head';
+  const isFieldSales = userRole === 'field_sales';
+  const isInsideSales = userRole === 'inside_sales';
 
   // Only show loading on initial load when there's no cached data
   const loading = authLoading || ((roleLoading || permissionsLoading) && !roleData);
@@ -127,12 +143,16 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
   const value = useMemo(() => ({
     userRole,
     isAdmin,
+    isSuperAdmin,
     isManager,
+    isSalesHead,
+    isFieldSales,
+    isInsideSales,
     permissions,
     loading,
     hasPageAccess,
     refreshPermissions,
-  }), [userRole, isAdmin, isManager, permissions, loading, hasPageAccess, refreshPermissions]);
+  }), [userRole, isAdmin, isSuperAdmin, isManager, isSalesHead, isFieldSales, isInsideSales, permissions, loading, hasPageAccess, refreshPermissions]);
 
   return (
     <PermissionsContext.Provider value={value}>

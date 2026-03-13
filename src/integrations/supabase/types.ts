@@ -1606,7 +1606,6 @@ export type Database = {
       archive_completed_action_items: { Args: never; Returns: number }
       get_user_role: { Args: { p_user_id: string }; Returns: string }
       is_current_user_admin: { Args: never; Returns: boolean }
-      is_current_user_admin_by_metadata: { Args: never; Returns: boolean }
       is_user_admin: { Args: { user_id?: string }; Returns: boolean }
       log_data_access: {
         Args: {

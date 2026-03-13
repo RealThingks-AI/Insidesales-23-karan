@@ -5,12 +5,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/contexts/PermissionsContext";
 import SecurityEnhancedApp from "@/components/SecurityEnhancedApp";
 import { AppSidebar } from "@/components/AppSidebar";
 import Dashboard from "./pages/Dashboard";
 import Accounts from "./pages/Accounts";
 import Contacts from "./pages/Contacts";
-// Leads module removed - leads are now managed under Deals Lead stage
 import DealsPage from "./pages/DealsPage";
 import Campaigns from "./pages/Campaigns";
 import ActionItems from "./pages/ActionItems";
@@ -19,15 +19,48 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
 import { useState } from "react";
+import { ShieldAlert } from "lucide-react";
 
 const queryClient = new QueryClient();
 
+// Access Denied component
+const AccessDenied = () => (
+  <div className="h-full flex items-center justify-center">
+    <div className="text-center max-w-md">
+      <ShieldAlert className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+      <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+      <p className="text-muted-foreground">
+        You don't have permission to access this page. Contact your administrator if you need access.
+      </p>
+    </div>
+  </div>
+);
+
+// PageAccessGuard — pure in-memory check, zero network requests
+const PageAccessGuard = ({ children }: { children: React.ReactNode }) => {
+  const { pathname } = useLocation();
+  const { hasPageAccess, loading } = usePermissions();
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!hasPageAccess(pathname)) {
+    return <AccessDenied />;
+  }
+
+  return <>{children}</>;
+};
+
 // Layout Component for all pages with fixed sidebar
 const FixedSidebarLayout = ({ children }: { children: React.ReactNode }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Start collapsed
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   
-  // These routes need overflow-hidden so they can control their own scrolling
   const controlledScrollRoutes = ['/action-items', '/contacts', '/deals', '/campaigns', '/settings', '/notifications', '/', '/accounts'];
   const needsControlledScroll = controlledScrollRoutes.includes(location.pathname);
   
@@ -71,15 +104,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Use FixedSidebarLayout for all protected routes
   return (
     <FixedSidebarLayout>
-      {children}
+      <PageAccessGuard>
+        {children}
+      </PageAccessGuard>
     </FixedSidebarLayout>
   );
 };
 
-// Auth Route Component (redirects if already authenticated)
+// Auth Route Component
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
@@ -101,7 +135,7 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// App Router Component - inside the auth context
+// App Router Component
 const AppRouter = () => (
   <BrowserRouter>
     <Routes>
@@ -125,7 +159,6 @@ const AppRouter = () => (
           <Contacts />
         </ProtectedRoute>
       } />
-      
       <Route path="/deals" element={
         <ProtectedRoute>
           <DealsPage />
