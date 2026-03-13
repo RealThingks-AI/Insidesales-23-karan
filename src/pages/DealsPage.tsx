@@ -295,7 +295,6 @@ const DealsPage = () => {
             table: 'deals'
           },
           (payload) => {
-            console.log('Real-time deal change:', payload);
             
             if (payload.eventType === 'INSERT') {
               setDeals(prev => [payload.new as Deal, ...prev]);
