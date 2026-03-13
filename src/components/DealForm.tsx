@@ -106,8 +106,7 @@ interface DealFormProps {
     });
   };
 
-  const handleContactSelect = (contact: any) => {
-    console.log("Selected contact:", contact);
+  const handleContactSelect = (_contact: any) => {
     // The contact selection is handled in the FormFieldRenderer component
   };
 
