@@ -128,8 +128,6 @@ const DealsPage = () => {
           throw error;
         }
 
-        console.log("Insert successful:", data);
-
         // Log create operation
         await logCreate('deals', data.id, dealData);
 
