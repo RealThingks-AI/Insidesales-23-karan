@@ -46,6 +46,7 @@ const Contacts = () => {
 
   const handleBulkDelete = async () => {
     if (selectedContacts.length === 0) return;
+    setShowDeleteConfirm(false);
     try {
       const { error } = await supabase.from('contacts').delete().in('id', selectedContacts);
       if (error) throw error;
