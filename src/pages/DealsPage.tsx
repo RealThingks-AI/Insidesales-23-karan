@@ -67,12 +67,7 @@ const DealsPage = () => {
         .select()
         .single();
 
-      if (error) {
-        console.error("Supabase update error:", error);
-        throw error;
-      }
-
-      console.log("Update successful, data:", data);
+      if (error) throw error;
       
       // Log update operation
       await logUpdate('deals', dealId, updates, existingDeal);
