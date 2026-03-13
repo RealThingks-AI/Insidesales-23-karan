@@ -124,11 +124,8 @@ interface DealFormProps {
         modified_by: deal?.created_by || formData.created_by
       };
       
-      console.log("Save data:", saveData);
-      
       await onSave(saveData);
       
-      console.log("Save successful");
       toast({
         title: "Success",
         description: isCreating ? "Deal created successfully" : "Deal updated successfully",
