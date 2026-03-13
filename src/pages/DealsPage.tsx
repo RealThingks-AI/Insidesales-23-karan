@@ -111,7 +111,6 @@ const DealsPage = () => {
           .single();
 
         if (error) {
-          console.error("Insert error:", error);
           
           // Check for RLS policy violation
           if (error.message?.includes('row-level security') || 
