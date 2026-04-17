@@ -707,6 +707,10 @@ export function CampaignMARTMessage({ campaignId, campaign, selectedRegions = []
             </div>
           </div>
           <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => generateWithAI("email")} disabled={aiLoading === "email"}>
+              {aiLoading === "email" ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+              Generate with AI
+            </Button>
             <Button variant="outline" onClick={() => setEmailModalOpen(false)}>Cancel</Button>
             <Button onClick={saveEmailTemplate} disabled={!emailForm.template_name || !emailForm.subject || !emailForm.body}>Save</Button>
           </DialogFooter>
@@ -751,6 +755,10 @@ export function CampaignMARTMessage({ campaignId, campaign, selectedRegions = []
             </div>
           </div>
           <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => generateWithAI("phone")} disabled={aiLoading === "phone"}>
+              {aiLoading === "phone" ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+              Generate with AI
+            </Button>
             <Button variant="outline" onClick={() => setScriptModalOpen(false)}>Cancel</Button>
             <Button onClick={savePhoneScript} disabled={!scriptForm.script_name}>Save</Button>
           </DialogFooter>
@@ -789,6 +797,10 @@ export function CampaignMARTMessage({ campaignId, campaign, selectedRegions = []
             </div>
           </div>
           <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => generateWithAI(linkedinForm.email_type === "LinkedIn-Connection" ? "linkedin-connection" : "linkedin-followup")} disabled={aiLoading?.startsWith("linkedin")}>
+              {aiLoading?.startsWith("linkedin") ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+              Generate with AI
+            </Button>
             <Button variant="outline" onClick={() => setLinkedinModalOpen(false)}>Cancel</Button>
             <Button onClick={saveLinkedinTemplate} disabled={!linkedinForm.template_name || !linkedinForm.body || linkedinOverLimit}>Save</Button>
           </DialogFooter>
